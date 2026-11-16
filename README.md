@@ -51,7 +51,7 @@ tap RESET, release BOOT, then flash.
 ## First start
 
 1. With no Wi-Fi configured, the gateway opens an access point named
-   `CANGW-XXXX` (no password). Join it and open <http://192.168.4.1>.
+   `CAN-Filter-XXXX` (password `vtron123`). Join it and open <http://192.168.4.1>.
 2. Under **Settings → Wi-Fi**, enter your network. The gateway reboots and
    joins it; open <http://cangw.local> or the address shown by `status` on the
    serial console. It keeps trying to join that network for as long as it
@@ -72,7 +72,7 @@ Forwarding starts as soon as the board has power. It does not wait for Wi-Fi.
 | **Filters** | The blocklist: add an ID in hex, remove one, or search the CAN1 DBC by message name. |
 | **DBC** | Upload, replace or delete the DBC file for each bus. |
 | **Send** | Send a test frame on either bus, once or repeatedly. |
-| **Settings** | Bitrates, listen-only, Wi-Fi, admin password, config export/import, firmware update, reboot, factory reset. |
+| **Settings** | Bitrates, listen-only, Wi-Fi, access point password, admin password, config export/import, firmware update, reboot, factory reset. |
 
 See [docs/HOW_TO_USE.md](docs/HOW_TO_USE.md) for a walkthrough of each tab.
 
@@ -91,6 +91,7 @@ Open the USB port at any baud rate and type `help`.
 | `fwd on\|off` | Forwarding master switch |
 | `send <1\|2> <id> [data]` | Test frame, e.g. `send 2 123 DEADBEEF` |
 | `wifi <ssid> [password]` | Save credentials and reboot (`wifi ""` clears them) |
+| `appass <password>` | Set the access point password (8 to 63 characters) and reboot |
 | `password <new>\|off` | Set or remove the web admin password |
 | `xtal <0\|8\|12\|16\|20>` | XL2515 crystal in MHz; 0 detects it at start-up (the default) |
 | `factory-reset`, `reboot` | |
@@ -115,6 +116,7 @@ numbers or hex strings (`386` or `"0x182"`).
 | POST | `/api/ota` | Firmware `.bin` as the request body |
 | POST | `/api/login`, `/api/logout` | `{"password": "..."}` |
 | PUT | `/api/password`, `/api/wifi` | `{"password": "..."}`, `{"ssid": "...", "password": "..."}` |
+| PUT | `/api/ap-password` | `{"password": "..."}` (8 to 63 characters); reboots |
 | POST | `/api/stats/clear`, `/api/reboot`, `/api/factory-reset` | |
 | WebSocket | `/ws` | Server to client, about 4 times a second: counters, and the per-ID rows that changed |
 
@@ -154,9 +156,13 @@ to get that far, the next reset boots the previous image again.
   another node on that bus has to.
 - **Monitor limit.** The table tracks 1024 different IDs per bus. Further IDs
   are still forwarded, just not listed.
-- **Access point.** The fallback access point is open, and it opens by itself
-  whenever the configured network is unreachable. Set an admin password on
-  any installed gateway; without one, anyone in Wi-Fi range can change the
+- **Access point.** The fallback access point opens by itself whenever the
+  configured network is unreachable. Its password (WPA2) is `vtron123` until
+  you change it under **Settings → Access point password** or with `appass`;
+  a factory reset restores it. The name prefix and the default password are
+  `AP_SSID_PREFIX` and `AP_PASS_DEFAULT` in `src/config.h`. Change the
+  default password on any installed gateway and set an admin password;
+  without one, anyone who joins the access point can change the
   blocklist.
 
 ## Tests

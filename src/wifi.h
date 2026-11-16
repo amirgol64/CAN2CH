@@ -14,7 +14,7 @@ typedef struct {
 /*
  * Connect as a station with the saved credentials and keep retrying for as
  * long as it takes. While the network is unreachable, or when there are no
- * credentials, the access point CANGW-XXXX is open. Also starts mDNS
+ * credentials, the access point CAN-Filter-XXXX is open. Also starts mDNS
  * (cangw.local). Returns at once; it does not wait for the connection.
  */
 void wifi_start(void);

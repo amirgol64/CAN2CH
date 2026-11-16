@@ -16,7 +16,12 @@ typedef struct {
     char wifi_pass[65];
     char admin_salt[17]; /* hex */
     char admin_hash[65]; /* hex sha256(salt + password), empty = auth off */
+    char ap_pass[64];    /* fallback access point WPA2 password, 8-63 chars */
 } config_t;
+
+/* Fallback access point: SSID is AP_SSID_PREFIX "-XXXX" (end of the MAC). */
+#define AP_SSID_PREFIX "CAN-Filter"
+#define AP_PASS_DEFAULT "vtron123"
 
 extern config_t g_cfg;
 
@@ -27,6 +32,8 @@ void config_defaults(config_t *cfg);
 void config_default_filters(void);
 bool config_bitrate_valid(int kbps);
 bool config_xtal_valid(int mhz);
+/* WPA2 needs 8 to 63 printable ASCII characters. */
+bool config_ap_pass_valid(const char *pass);
 /* Parses "0x1A2" or "1A2" (always hex). */
 bool config_parse_hex_id(const char *s, uint32_t *id);
 /* A CAN ID in JSON: either a number or a hex string. */

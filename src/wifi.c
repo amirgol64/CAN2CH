@@ -17,7 +17,7 @@
 /*
  * With saved credentials the gateway is a station and never gives up on the
  * network: it retries with a growing delay (5 s up to 60 s). While the network
- * has been unreachable for FALLBACK_MS, the access point CANGW-XXXX is opened
+ * has been unreachable for FALLBACK_MS, the access point CAN-Filter-XXXX is opened
  * as well, so the gateway stays reachable on site; it closes again as soon as
  * the station connection is back. Without credentials only the access point
  * runs.
@@ -59,14 +59,16 @@ static void ap_config(void)
 {
     uint8_t mac[6];
     esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
-    snprintf(s_ap_ssid, sizeof(s_ap_ssid), "CANGW-%02X%02X", mac[4], mac[5]);
+    snprintf(s_ap_ssid, sizeof(s_ap_ssid), AP_SSID_PREFIX "-%02X%02X", mac[4], mac[5]);
 
     wifi_config_t wc = {0};
     strlcpy((char *)wc.ap.ssid, s_ap_ssid, sizeof(wc.ap.ssid));
     wc.ap.ssid_len = (uint8_t)strlen(s_ap_ssid);
     wc.ap.channel = 1;
     wc.ap.max_connection = 4;
-    wc.ap.authmode = WIFI_AUTH_OPEN;
+    strlcpy((char *)wc.ap.password, g_cfg.ap_pass, sizeof(wc.ap.password));
+    wc.ap.authmode = WIFI_AUTH_WPA2_PSK;
+    wc.ap.pmf_cfg.required = false;
     esp_wifi_set_config(WIFI_IF_AP, &wc);
 }
 

@@ -69,6 +69,7 @@ static void save(void)
     if (err == ESP_OK) err = nvs_set_str(h, "pass", copy.wifi_pass);
     if (err == ESP_OK) err = nvs_set_str(h, "salt", copy.admin_salt);
     if (err == ESP_OK) err = nvs_set_str(h, "hash", copy.admin_hash);
+    if (err == ESP_OK) err = nvs_set_str(h, "appass", copy.ap_pass);
     if (err == ESP_OK) err = nvs_set_blob(h, "fstd", std_bits, sizeof(std_bits));
     if (err == ESP_OK) err = nvs_set_u16(h, "fextn", ext_count);
     if (err == ESP_OK) {
@@ -141,6 +142,7 @@ static bool load(bool *migrated)
         get_str(h, "pass", tmp.wifi_pass, sizeof(tmp.wifi_pass));
         get_str(h, "salt", tmp.admin_salt, sizeof(tmp.admin_salt));
         get_str(h, "hash", tmp.admin_hash, sizeof(tmp.admin_hash));
+        get_str(h, "appass", tmp.ap_pass, sizeof(tmp.ap_pass));
     } else {
         goto out; /* written by a newer firmware with an unknown layout */
     }
@@ -155,6 +157,8 @@ static bool load(bool *migrated)
     tmp.wifi_pass[sizeof(tmp.wifi_pass) - 1] = '\0';
     tmp.admin_salt[sizeof(tmp.admin_salt) - 1] = '\0';
     tmp.admin_hash[sizeof(tmp.admin_hash) - 1] = '\0';
+    tmp.ap_pass[sizeof(tmp.ap_pass) - 1] = '\0';
+    if (!config_ap_pass_valid(tmp.ap_pass)) strcpy(tmp.ap_pass, AP_PASS_DEFAULT);
     if (!config_bitrate_valid(tmp.bitrate1)) tmp.bitrate1 = 250;
     if (!config_bitrate_valid(tmp.bitrate2)) tmp.bitrate2 = 250;
     if (!config_xtal_valid(tmp.xtal_mhz)) tmp.xtal_mhz = 0;

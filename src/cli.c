@@ -204,6 +204,19 @@ static int cmd_wifi(int argc, char **argv)
     return 0;
 }
 
+static int cmd_appass(int argc, char **argv)
+{
+    if (argc != 2 || !config_ap_pass_valid(argv[1])) {
+        printf("usage: appass <password>   (8 to 63 characters, no spaces)\n");
+        return 1;
+    }
+    strlcpy(g_cfg.ap_pass, argv[1], sizeof(g_cfg.ap_pass));
+    config_save_now();
+    printf("access point password saved, rebooting\n");
+    app_reboot_later();
+    return 0;
+}
+
 static int cmd_password(int argc, char **argv)
 {
     if (argc != 2 || strlen(argv[1]) > 64) {
@@ -304,6 +317,7 @@ void cli_start(void)
         {.command = "xtal", .help = "XL2515 crystal: xtal <0|8|12|16|20> (0 = detect)", .func = cmd_xtal},
         {.command = "fwd", .help = "Forwarding master switch: fwd on|off", .func = cmd_fwd},
         {.command = "wifi", .help = "Set Wi-Fi credentials and reboot: wifi <ssid> [password]", .func = cmd_wifi},
+        {.command = "appass", .help = "Set the access point password and reboot: appass <8-63 chars>", .func = cmd_appass},
         {.command = "password", .help = "Set or remove the web admin password: password <new>|off", .func = cmd_password},
         {.command = "send", .help = "Send a test frame: send <1|2> <hex id> [hex data]", .func = cmd_send},
         {.command = "clear", .help = "Clear the per-ID table and the queue peak marks", .func = cmd_clear},

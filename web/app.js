@@ -603,6 +603,16 @@
     run(api('PUT', '/api/wifi', { ssid: ssid, password: $('#wifi-pass').value }), 'Saved. The gateway is rebooting.');
   };
 
+  $('#appw-form').onsubmit = function (ev) {
+    ev.preventDefault();
+    var pw = $('#appw-new').value;
+    if (pw.length < 8 || pw.length > 63) { toast('The password must be 8 to 63 characters', true); return; }
+    if (!confirm('Save the access point password and reboot? Devices joined to the access point will have to reconnect with the new password.')) return;
+    run(api('PUT', '/api/ap-password', { password: pw }), 'Saved. The gateway is rebooting.').then(function () {
+      $('#appw-new').value = '';
+    });
+  };
+
   $('#pw-form').onsubmit = function (ev) {
     ev.preventDefault();
     var pw = $('#pw-new').value;

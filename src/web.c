@@ -906,6 +906,30 @@ static esp_err_t wifi_put(httpd_req_t *req)
     return ESP_OK;
 }
 
+static esp_err_t ap_password_put(httpd_req_t *req)
+{
+    if (!guard_write(req, true)) {
+        return ESP_OK;
+    }
+    cJSON *root = read_json(req);
+    if (!root) {
+        return ESP_OK;
+    }
+    const cJSON *pw = cJSON_GetObjectItem(root, "password");
+    bool ok = cJSON_IsString(pw) && config_ap_pass_valid(pw->valuestring);
+    if (ok) {
+        strlcpy(g_cfg.ap_pass, pw->valuestring, sizeof(g_cfg.ap_pass));
+    }
+    cJSON_Delete(root);
+    if (!ok) {
+        return send_error(req, "400 Bad Request", "password must be 8 to 63 characters");
+    }
+    config_save_now();
+    send_ok(req);
+    app_reboot_later();
+    return ESP_OK;
+}
+
 static esp_err_t reboot_post(httpd_req_t *req)
 {
     if (!guard_write(req, true)) {
@@ -1030,6 +1054,7 @@ bool web_start(void)
         {.uri = "/api/logout", .method = HTTP_POST, .handler = logout_post},
         {.uri = "/api/password", .method = HTTP_PUT, .handler = password_put},
         {.uri = "/api/wifi", .method = HTTP_PUT, .handler = wifi_put},
+        {.uri = "/api/ap-password", .method = HTTP_PUT, .handler = ap_password_put},
         {.uri = "/api/reboot", .method = HTTP_POST, .handler = reboot_post},
         {.uri = "/api/factory-reset", .method = HTTP_POST, .handler = factory_reset_post},
         {.uri = "/api/stats/clear", .method = HTTP_POST, .handler = stats_clear_post},

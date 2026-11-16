@@ -293,6 +293,7 @@ async def stats_clear(request):
 
 
 @routes.put("/api/wifi")
+@routes.put("/api/ap-password")
 @routes.post("/api/reboot")
 @routes.post("/api/factory-reset")
 @routes.post("/api/ota")

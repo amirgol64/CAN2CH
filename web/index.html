@@ -209,7 +209,16 @@
           <label>Network name (SSID) <input id="wifi-ssid" maxlength="32" class="w" autocomplete="off"></label>
           <label>Password <input id="wifi-pass" type="password" maxlength="64" class="w" autocomplete="new-password"></label>
           <div class="row"><button class="primary w">Save and reboot</button></div>
-          <p class="muted">If the network cannot be joined, the gateway starts its own access point named CANGW-XXXX (address 192.168.4.1).</p>
+          <p class="muted">If the network cannot be joined, the gateway starts its own access point named CAN-Filter-XXXX (address 192.168.4.1).</p>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>Access point password</h2>
+        <p class="muted">Password for the CAN-Filter-XXXX access point. The factory default is vtron123.</p>
+        <form id="appw-form" class="form">
+          <label>New password (8 to 63 characters) <input id="appw-new" type="password" minlength="8" maxlength="63" class="w" autocomplete="new-password" required></label>
+          <div class="row"><button class="primary w">Save and reboot</button></div>
         </form>
       </div>
 

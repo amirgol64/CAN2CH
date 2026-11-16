@@ -8,8 +8,8 @@ README). Everything shown here can also be done from the
 
 ## 1. Connect
 
-1. **First time, no Wi-Fi configured:** join the open access point
-   `CANGW-XXXX` and browse to <http://192.168.4.1>.
+1. **First time, no Wi-Fi configured:** join the access point
+   `CAN-Filter-XXXX` (password `vtron123`) and browse to <http://192.168.4.1>.
 2. **On your network:** browse to <http://cangw.local>, or to the IP address
    the gateway got from your router (type `status` on the serial console to
    see it).
@@ -142,13 +142,21 @@ signal strength. Enter a network name and password and click
 to access point mode.
 
 If the network is unreachable for 20 s, the gateway also opens its
-`CANGW-XXXX` access point (address 192.168.4.1) until it reconnects, so you
+`CAN-Filter-XXXX` access point (address 192.168.4.1) until it reconnects, so you
 can always get back in.
+
+### Access point password
+
+The access point uses WPA2 with the password `vtron123` from the factory.
+Enter a new one (8 to 63 characters) and click **Save and reboot**; anything
+joined to the access point then has to reconnect with the new password. A
+factory reset restores `vtron123`.
 
 ### Admin password
 
 Set one if anyone else can reach the gateway's network, and always on an
-installed unit: the fallback access point is open. With a password set,
+installed unit: anyone who joins the access point can otherwise change the
+settings. With a password set,
 visitors see the page read-only until they log in. Leave the field empty and
 click **Set password** to remove it.
 

@@ -27,7 +27,7 @@ the web UI.
 | 6 | Bitrate | Set independently per bus: 25/50/100/125/250/500/800/1000 kbit/s |
 | 7 | Frames | Standard and extended frames both forwarded and filterable (ID + Std/Ext flag). RTR frames forwarded unchanged |
 | 8 | ID entry | Live list of IDs seen on CAN1, with checkboxes, plus manual hex entry |
-| 9 | Wi-Fi | STA using saved credentials, falling back to an AP named `CANGW-XXXX`. mDNS name `cangw.local` |
+| 9 | Wi-Fi | STA using saved credentials, falling back to a WPA2 AP named `CAN-Filter-XXXX` (default password `vtron123`, changeable). mDNS name `cangw.local` |
 | 10 | Auth | Optional admin password (off by default). Without login the monitor is read-only |
 | 11 | Monitor | Per-ID table (count, rate, last data, DLC, forwarded/blocked) and bus stats, pushed over WebSocket at about 4 Hz |
 | 12 | Frontend | Plain HTML/CSS/JS, gzipped and embedded in the firmware |

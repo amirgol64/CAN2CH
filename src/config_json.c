@@ -18,6 +18,21 @@ void config_defaults(config_t *cfg)
     cfg->listen_only1 = false;
     cfg->forwarding = true;
     cfg->xtal_mhz = 0;
+    strcpy(cfg->ap_pass, AP_PASS_DEFAULT);
+}
+
+bool config_ap_pass_valid(const char *pass)
+{
+    size_t len = pass ? strlen(pass) : 0;
+    if (len < 8 || len > 63) {
+        return false;
+    }
+    for (size_t i = 0; i < len; i++) {
+        if (pass[i] < 0x20 || pass[i] > 0x7e) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void config_default_filters(void)
