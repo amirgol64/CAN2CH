@@ -417,7 +417,8 @@ static esp_err_t status_get(httpd_req_t *req)
     json_escape(wi.ssid, ssid, sizeof(ssid));
     json_escape(wi.sta_ssid, sta, sizeof(sta));
 
-    int n = snprintf(buf, 2048, "{\"fw\":\"%s\",", FW_VERSION);
+    int n = snprintf(buf, 2048, "{\"fw\":\"%s\",\"serial\":\"%s\",", FW_VERSION,
+                     app_serial_number());
     n += build_live(buf + n, 2048 - (size_t)n);
     n += snprintf(buf + n, 2048 - (size_t)n,
         ",\"wifi\":{\"mode\":\"%s\",\"ssid\":\"%s\",\"sta\":\"%s\",\"ip\":\"%s\",\"rssi\":%d,\"connected\":%s},"

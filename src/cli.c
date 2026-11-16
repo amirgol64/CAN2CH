@@ -68,8 +68,9 @@ static int cmd_status(int argc, char **argv)
     gateway_get_can2_status(&c2);
     const gateway_counters_t *g = &g_counters;
 
-    printf("esp32s3-can-gateway %s, up %llu s, running from %s\n", FW_VERSION,
-           (unsigned long long)(esp_timer_get_time() / 1000000), ota_running_partition());
+    printf("esp32s3-can-gateway %s, serial %s, up %llu s, running from %s\n", FW_VERSION,
+           app_serial_number(), (unsigned long long)(esp_timer_get_time() / 1000000),
+           ota_running_partition());
     printf("Reset   last cause: %s; free RAM %u bytes (lowest %u)\n", app_reset_reason(),
            (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
            (unsigned)heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL));

@@ -149,6 +149,7 @@
       $('#auth-info').textContent = s.auth.required
         ? 'A password is set. Without logging in, this page is read-only.'
         : 'No password is set: anyone on the network can change settings.';
+      $('#serial-no').textContent = s.serial || '-';
       $('#fw-info').textContent = 'Running version ' + s.fw + ' from partition ' + s.partition +
         '. Last restart: ' + s.reset + '. Free RAM ' + num(s.heap) + ' bytes (lowest ' + num(s.minheap) + ').';
       $('#set-br1').value = s.b1.br;

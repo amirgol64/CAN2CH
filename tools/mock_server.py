@@ -127,7 +127,7 @@ def parse_id(value):
 
 @routes.get("/api/status")
 async def status(request):
-    data = {"fw": "mock"}
+    data = {"fw": "mock", "serial": "CF-A1B2C3"}
     data.update(sim.live())
     data.update({
         "wifi": {"mode": "sta", "ssid": "MockNet", "sta": "MockNet", "ip": "127.0.0.1", "rssi": -52, "connected": True},

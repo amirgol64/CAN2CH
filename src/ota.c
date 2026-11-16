@@ -5,6 +5,7 @@
 
 #include "esp_attr.h"
 #include "esp_log.h"
+#include "esp_mac.h"
 #include "esp_ota_ops.h"
 #include "esp_system.h"
 #include "esp_timer.h"
@@ -144,6 +145,26 @@ static void mark_planned_restart(void)
     s_planned_restart = PLANNED_RESTART_MAGIC;
 }
 
+/*
+ * The base MAC is burned into eFuse at the factory and is unique per chip.
+ * The first 3 bytes are an Espressif vendor prefix (OUI); the last 3 are the
+ * per-chip part. Set once in app_restart_init, read-only after that.
+ */
+static char s_serial[16] = "CF-000000";
+
+static void serial_init(void)
+{
+    uint8_t mac[6];
+    if (esp_efuse_mac_get_default(mac) == ESP_OK) {
+        snprintf(s_serial, sizeof(s_serial), "CF-%02X%02X%02X", mac[3], mac[4], mac[5]);
+    }
+}
+
+const char *app_serial_number(void)
+{
+    return s_serial;
+}
+
 void app_restart_init(void)
 {
     esp_reset_reason_t r = esp_reset_reason();
@@ -152,6 +173,7 @@ void app_restart_init(void)
                          r != ESP_RST_POWERON && r != ESP_RST_BROWNOUT;
     s_planned_restart = 0;
     esp_register_shutdown_handler(mark_planned_restart);
+    serial_init();
 }
 
 const char *app_reset_reason(void)

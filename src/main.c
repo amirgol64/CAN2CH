@@ -58,7 +58,8 @@ static void button_task(void *arg)
 void app_main(void)
 {
     app_restart_init();
-    ESP_LOGI(TAG, "esp32s3-can-gateway %s, last restart: %s", FW_VERSION, app_reset_reason());
+    ESP_LOGI(TAG, "esp32s3-can-gateway %s, serial %s, last restart: %s", FW_VERSION,
+             app_serial_number(), app_reset_reason());
 
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {

@@ -113,7 +113,7 @@ stall is short.
 ### REST API
 | Method | Path | Body / result |
 |---|---|---|
-| GET | `/api/status` | firmware version, uptime, Wi-Fi, bus states, queue peaks, restart cause, minimum free heap |
+| GET | `/api/status` | firmware version, serial number, uptime, Wi-Fi, bus states, queue peaks, restart cause, minimum free heap |
 | GET/PUT | `/api/config` | full config JSON (export/import) |
 | GET | `/api/filters` | `[{id, ext}]` |
 | POST/DELETE | `/api/filters` | add or remove one `{id, ext}` |

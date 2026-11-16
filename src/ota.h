@@ -21,5 +21,7 @@ void app_reboot_later(void);
 
 /* Call first thing in app_main: works out how the last restart happened. */
 void app_restart_init(void);
+/* Device serial number "CF-xxxxxx": the last 3 bytes of the factory MAC in hex. */
+const char *app_serial_number(void);
 /* Why the chip last restarted, in words ("power on", "software restart", ...). */
 const char *app_reset_reason(void);

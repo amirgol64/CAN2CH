@@ -197,6 +197,10 @@ Updating writes a lot to flash; do it while the bus is quiet.
 
 ### Device
 
+The serial number (`CF-` and six hex digits) is shown here and in the
+`status` output on the serial console. It comes from the chip's factory MAC
+address, so it stays the same after a factory reset or firmware update.
+
 - **Reboot:** forwarding resumes about one second after the restart.
 - **Factory reset:** erases bitrates, blocklist, Wi-Fi and the admin
   password, sets the access point password back to `vtron123`, then
