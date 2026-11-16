@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CAN gateway</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <span class="logo">CAN<b>GW</b></span>
+    <span id="conn" class="pill bad" title="Live connection to the gateway">offline</span>
+  </div>
+  <nav id="tabs">
+    <button data-tab="monitor" class="active">Monitor</button>
+    <button data-tab="filters">Filters</button>
+    <button data-tab="dbc">DBC</button>
+    <button data-tab="send">Send</button>
+    <button data-tab="settings">Settings</button>
+  </nav>
+  <div class="head-right">
+    <label class="switch" title="Master switch: forward CAN1 frames to CAN2">
+      <input type="checkbox" id="fwd-switch" class="w">
+      <span>Forwarding</span>
+    </label>
+    <button id="login-btn" class="ghost" hidden>Log in</button>
+    <button id="logout-btn" class="ghost" hidden>Log out</button>
+  </div>
+</header>
+
+<div id="banner" hidden></div>
+
+<main>
+  <!-- ================= Monitor ================= -->
+  <section id="tab-monitor" class="tab active">
+    <div class="cards">
+      <div class="card" id="card-b1">
+        <h3>CAN1 <small>input</small> <span class="pill" data-f="st">-</span></h3>
+        <div class="meter"><i data-f="loadbar"></i></div>
+        <dl>
+          <dt>Bitrate</dt><dd data-f="br">-</dd>
+          <dt>Load</dt><dd data-f="load">-</dd>
+          <dt>RX</dt><dd data-f="rx">-</dd>
+          <dt>TX</dt><dd data-f="tx">-</dd>
+          <dt>Errors</dt><dd data-f="err">-</dd>
+          <dt>Missed</dt><dd data-f="miss">-</dd>
+        </dl>
+      </div>
+      <div class="card" id="card-gw">
+        <h3>Gateway <span class="pill" data-f="st">-</span></h3>
+        <div class="meter"><i data-f="qbar"></i></div>
+        <dl>
+          <dt>Forwarded</dt><dd data-f="fwd">-</dd>
+          <dt>Blocked</dt><dd data-f="blk">-</dd>
+          <dt>Dropped</dt><dd data-f="drop">-</dd>
+          <dt>Queue</dt><dd data-f="q">-</dd>
+          <dt>Blocklist</dt><dd data-f="nfilt">-</dd>
+          <dt>Uptime</dt><dd data-f="up">-</dd>
+        </dl>
+      </div>
+      <div class="card" id="card-b2">
+        <h3>CAN2 <small>output</small> <span class="pill" data-f="st">-</span></h3>
+        <div class="meter"><i data-f="loadbar"></i></div>
+        <dl>
+          <dt>Bitrate</dt><dd data-f="br">-</dd>
+          <dt>Load</dt><dd data-f="load">-</dd>
+          <dt>TX</dt><dd data-f="tx">-</dd>
+          <dt>RX</dt><dd data-f="rx">-</dd>
+          <dt>TX failed</dt><dd data-f="fail">-</dd>
+          <dt>Errors</dt><dd data-f="err">-</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <select id="mon-bus" title="Which bus to show">
+        <option value="1">CAN1 (input)</option>
+        <option value="2">CAN2 (received)</option>
+        <option value="0">Both buses</option>
+      </select>
+      <input id="mon-search" type="search" placeholder="Search ID or name">
+      <label class="check"><input type="checkbox" id="mon-pause"> Pause</label>
+      <span class="grow"></span>
+      <span id="mon-count" class="muted"></span>
+      <button id="mon-clear" class="ghost w">Clear counters</button>
+    </div>
+
+    <div class="table-wrap">
+      <table id="mon-table">
+        <thead>
+          <tr>
+            <th title="Tick to block this ID">Block</th>
+            <th>Bus</th><th>ID</th><th>Name</th><th>DLC</th><th>Data</th>
+            <th class="num">Count</th><th class="num">Rate</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p id="mon-empty" class="empty">No frames seen yet.</p>
+    </div>
+  </section>
+
+  <!-- ================= Filters ================= -->
+  <section id="tab-filters" class="tab">
+    <div class="panel">
+      <h2>Blocked IDs</h2>
+      <p class="muted">Every frame received on CAN1 is forwarded to CAN2, except the IDs listed here. Changes apply at once and are saved automatically.</p>
+      <form id="flt-add" class="row">
+        <input id="flt-id" placeholder="ID in hex, e.g. 182" autocomplete="off" spellcheck="false" class="w mono">
+        <select id="flt-ext" class="w">
+          <option value="0">Standard (11-bit)</option>
+          <option value="1">Extended (29-bit)</option>
+        </select>
+        <button class="primary w">Block</button>
+      </form>
+      <div class="row">
+        <input id="flt-dbc-search" type="search" placeholder="Search CAN1 DBC by message name">
+      </div>
+      <ul id="flt-dbc-results" class="results"></ul>
+      <table id="flt-table">
+        <thead><tr><th>ID</th><th>Type</th><th>Name</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p id="flt-empty" class="empty">Nothing is blocked: every frame is forwarded.</p>
+      <div class="row end"><button id="flt-clear" class="danger w">Remove all</button></div>
+    </div>
+  </section>
+
+  <!-- ================= DBC ================= -->
+  <section id="tab-dbc" class="tab">
+    <div class="two-col">
+      <div class="panel" data-bus="1">
+        <h2>CAN1 DBC</h2>
+        <p class="dbc-info muted">No file loaded.</p>
+        <div class="row">
+          <input type="file" accept=".dbc,text/plain" class="dbc-file w">
+          <button class="primary dbc-upload w">Upload</button>
+          <button class="danger dbc-delete w">Delete</button>
+        </div>
+      </div>
+      <div class="panel" data-bus="2">
+        <h2>CAN2 DBC</h2>
+        <p class="dbc-info muted">No file loaded.</p>
+        <div class="row">
+          <input type="file" accept=".dbc,text/plain" class="dbc-file w">
+          <button class="primary dbc-upload w">Upload</button>
+          <button class="danger dbc-delete w">Delete</button>
+        </div>
+      </div>
+    </div>
+    <p class="muted pad">DBC files are stored on the gateway and decoded in your browser. They add message names and signal values to the monitor (click a row to see its signals).</p>
+  </section>
+
+  <!-- ================= Send ================= -->
+  <section id="tab-send" class="tab">
+    <div class="panel narrow">
+      <h2>Send a test frame</h2>
+      <form id="tx-form" class="form">
+        <label>Bus
+          <select id="tx-bus" class="w"><option value="2">CAN2 (output)</option><option value="1">CAN1 (input)</option></select>
+        </label>
+        <label>ID (hex)
+          <input id="tx-id" value="123" class="w mono" autocomplete="off" spellcheck="false">
+        </label>
+        <label>Data (hex bytes)
+          <input id="tx-data" value="11 22 33 44" class="w mono" autocomplete="off" spellcheck="false">
+        </label>
+        <div class="row">
+          <label class="check"><input type="checkbox" id="tx-ext" class="w"> Extended ID</label>
+          <label class="check"><input type="checkbox" id="tx-rtr" class="w"> Remote frame</label>
+        </div>
+        <label>Repeat every (ms, 0 = once)
+          <input id="tx-period" type="number" min="0" max="60000" value="0" class="w">
+        </label>
+        <div class="row">
+          <button class="primary w" id="tx-send">Send</button>
+          <button type="button" class="ghost" id="tx-stop" hidden>Stop</button>
+          <span id="tx-result" class="muted"></span>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ================= Settings ================= -->
+  <section id="tab-settings" class="tab">
+    <div class="two-col">
+      <div class="panel">
+        <h2>CAN buses</h2>
+        <form id="bus-form" class="form">
+          <label>CAN1 bitrate <select id="set-br1" class="w"></select></label>
+          <label class="check"><input type="checkbox" id="set-lo1" class="w"> CAN1 listen-only (never acknowledge or transmit)</label>
+          <label>CAN2 bitrate <select id="set-br2" class="w"></select></label>
+          <label>CAN2 controller crystal
+            <select id="set-xtal" class="w">
+              <option value="0">Detect automatically</option>
+              <option value="8">8 MHz</option><option value="12">12 MHz</option>
+              <option value="16">16 MHz</option><option value="20">20 MHz</option>
+            </select>
+          </label>
+          <div class="row"><button class="primary w">Apply</button><span id="bus-result" class="muted"></span></div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>Wi-Fi</h2>
+        <p id="wifi-info" class="muted">-</p>
+        <form id="wifi-form" class="form">
+          <label>Network name (SSID) <input id="wifi-ssid" maxlength="32" class="w" autocomplete="off"></label>
+          <label>Password <input id="wifi-pass" type="password" maxlength="64" class="w" autocomplete="new-password"></label>
+          <div class="row"><button class="primary w">Save and reboot</button></div>
+          <p class="muted">If the network cannot be joined, the gateway starts its own access point named CANGW-XXXX (address 192.168.4.1).</p>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>Admin password</h2>
+        <p id="auth-info" class="muted">-</p>
+        <form id="pw-form" class="form">
+          <label>New password (leave empty to remove) <input id="pw-new" type="password" maxlength="64" class="w" autocomplete="new-password"></label>
+          <div class="row"><button class="primary w">Set password</button></div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>Configuration</h2>
+        <div class="row">
+          <a class="button" href="/api/config" download="cangw-config.json">Export</a>
+          <input type="file" id="cfg-file" accept=".json,application/json" class="w">
+          <button id="cfg-import" class="primary w">Import</button>
+        </div>
+        <h2>Firmware update</h2>
+        <p id="fw-info" class="muted">-</p>
+        <div class="row">
+          <input type="file" id="ota-file" accept=".bin" class="w">
+          <button id="ota-upload" class="primary w">Upload</button>
+        </div>
+        <progress id="ota-progress" max="100" value="0" hidden></progress>
+        <h2>Device</h2>
+        <div class="row">
+          <button id="reboot-btn" class="ghost w">Reboot</button>
+          <button id="factory-btn" class="danger w">Factory reset</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<dialog id="login-dialog">
+  <form method="dialog" id="login-form" class="form">
+    <h2>Log in</h2>
+    <label>Admin password <input id="login-pass" type="password" autocomplete="current-password"></label>
+    <p id="login-error" class="error"></p>
+    <div class="row end">
+      <button type="button" class="ghost" id="login-cancel">Cancel</button>
+      <button class="primary" value="ok">Log in</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" hidden></div>
+
+<script src="dbc.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+# tools/can_test.py
+python-can>=4.3
+pyserial>=3.5
+# tools/mock_server.py
+aiohttp>=3.9

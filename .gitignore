@@ -1,0 +1,12 @@
+.pio/
+.vscode/
+managed_components/
+dependencies.lock
+sdkconfig
+sdkconfig.*
+!sdkconfig.defaults
+src/web_assets.c
+__pycache__/
+*.pyc
+build/
+test/host/build/
