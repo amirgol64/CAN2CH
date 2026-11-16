@@ -10,7 +10,8 @@ blocklist that you edit from a web page, the serial console or a REST API.
 - Optional DBC file per bus, decoded in the browser (message names and signal values)
 - Independent bitrates (25 to 1000 kbit/s), CAN1 listen-only mode, forwarding master switch
 - Test-frame sender, config export/import, firmware update from the browser with rollback
-- Wi-Fi station with fallback to its own access point, `cangw.local` via mDNS
+- Wi-Fi station that keeps retrying, with fallback to its own password-protected access point
+- Watchdog restart, last-restart cause and queue peak marks for unattended installs
 
 CAN2 traffic is shown in the monitor but is never forwarded back to CAN1.
 Out of the box, `0x182` and `0x427` are blocked and both buses run at 250 kbit/s.
@@ -52,17 +53,40 @@ tap RESET, release BOOT, then flash.
 
 1. With no Wi-Fi configured, the gateway opens an access point named
    `CAN-Filter-XXXX` (password `vtron123`). Join it and open <http://192.168.4.1>.
-2. Under **Settings → Wi-Fi**, enter your network. The gateway reboots and
-   joins it; open <http://cangw.local> or the address shown by `status` on the
-   serial console. It keeps trying to join that network for as long as it
-   takes. While the network has been unreachable for 20 s (wrong password,
-   router still starting after a power cut), the access point is open as well,
-   and it closes again once the gateway is connected.
-3. Under **Settings → Admin password**, set a password if other people share
-   the network. Without one, anyone who can reach the page can change settings.
-   With one, the page is read-only until you log in.
+2. Under **Settings → Wi-Fi**, enter your network and click **Save and
+   reboot**. The gateway reboots, joins that network and closes its access
+   point, so move your PC or phone to the same network and find the gateway's
+   address (see [Finding the gateway](#finding-the-gateway)).
+
+   The gateway keeps trying to join the network for as long as it takes.
+   While the network has been unreachable for 20 s (wrong password, router
+   still starting after a power cut), the access point is open as well, and it
+   closes again once the gateway is connected.
+3. Under **Settings → Access point password**, replace the default `vtron123`.
+4. Under **Settings → Admin password**, set a password. Without one, anyone
+   who can reach the page can change settings. With one, the page is
+   read-only until you log in.
 
 Forwarding starts as soon as the board has power. It does not wait for Wi-Fi.
+
+### Finding the gateway
+
+On your network the gateway gets its address from the router (DHCP). To find it:
+
+- **The router's list of connected devices**, where it appears as `cangw`.
+- **`status` on the serial console**, on the `Wi-Fi` line.
+- **<http://cangw.local>**, the name the gateway announces over mDNS. This
+  works from Windows 10 and 11, macOS, iOS, and Linux with Avahi, when your
+  device is on the same network and subnet. It usually fails from Android,
+  across VLANs or guest networks, and on routers or mesh systems that filter
+  multicast. Type the `http://` part in full, or the browser may search for
+  the name instead.
+
+Once the page is open, **Settings → Wi-Fi** shows the address. For a
+permanent installation, reserve that address for the gateway in the router
+(DHCP reservation) and use the IP address rather than `cangw.local`.
+
+On the gateway's own access point the address is always <http://192.168.4.1>.
 
 ## Web page
 
@@ -99,12 +123,15 @@ Open the USB port at any baud rate and type `help`.
 ## REST API
 
 Requests that change something must carry the header `X-CANGW: 1` and, when an
-admin password is set, the session cookie from `/api/login`. IDs are JSON
-numbers or hex strings (`386` or `"0x182"`).
+admin password is set, the session cookie from `/api/login`. After a wrong
+password, `/api/login` answers `429` for 1 s per failed attempt in a row (at
+most 30 s). IDs are JSON numbers or hex strings (`386` or `"0x182"`). The
+examples use `cangw.local`; use the IP address if that name does not resolve
+(see [Finding the gateway](#finding-the-gateway)).
 
 | Method | Path | Body or result |
 |---|---|---|
-| GET | `/api/status` | Version, uptime, Wi-Fi, bus states, counters |
+| GET | `/api/status` | Version, uptime, Wi-Fi, bus states, counters, queue peaks, last restart cause, lowest free RAM |
 | GET, PUT | `/api/config` | Whole configuration as JSON (export/import, passwords excluded) |
 | GET | `/api/filters` | `[{"id": 386, "ext": false}, ...]` |
 | POST, DELETE | `/api/filters` | `{"id": "0x182", "ext": false}`; DELETE also takes `{"all": true}` |
@@ -115,9 +142,11 @@ numbers or hex strings (`386` or `"0x182"`).
 | GET, PUT, DELETE | `/api/dbc/1`, `/api/dbc/2` | Raw DBC file |
 | POST | `/api/ota` | Firmware `.bin` as the request body |
 | POST | `/api/login`, `/api/logout` | `{"password": "..."}` |
-| PUT | `/api/password`, `/api/wifi` | `{"password": "..."}`, `{"ssid": "...", "password": "..."}` |
+| PUT | `/api/password` | `{"password": "..."}`; empty removes it |
+| PUT | `/api/wifi` | `{"ssid": "...", "password": "..."}`; reboots |
 | PUT | `/api/ap-password` | `{"password": "..."}` (8 to 63 characters); reboots |
-| POST | `/api/stats/clear`, `/api/reboot`, `/api/factory-reset` | |
+| POST | `/api/stats/clear` | Clears the per-ID table and the queue peak marks |
+| POST | `/api/reboot`, `/api/factory-reset` | |
 | WebSocket | `/ws` | Server to client, about 4 times a second: counters, and the per-ID rows that changed |
 
 ```sh
@@ -156,14 +185,30 @@ to get that far, the next reset boots the previous image again.
   another node on that bus has to.
 - **Monitor limit.** The table tracks 1024 different IDs per bus. Further IDs
   are still forwarded, just not listed.
-- **Access point.** The fallback access point opens by itself whenever the
-  configured network is unreachable. Its password (WPA2) is `vtron123` until
+- **Access point.** The fallback access point `CAN-Filter-XXXX` (the last
+  four hex digits of the board's MAC address) opens by itself whenever the
+  configured network is unreachable. Its WPA2 password is `vtron123` until
   you change it under **Settings → Access point password** or with `appass`;
   a factory reset restores it. The name prefix and the default password are
-  `AP_SSID_PREFIX` and `AP_PASS_DEFAULT` in `src/config.h`. Change the
-  default password on any installed gateway and set an admin password;
-  without one, anyone who joins the access point can change the
-  blocklist.
+  `AP_SSID_PREFIX` and `AP_PASS_DEFAULT` in `src/config.h`.
+- **Start-up after a restart.** After a software restart (reboot command,
+  settings that need one, firmware update, watchdog) the chip's first boot
+  attempt can fail with `Invalid image block, can't boot` on the serial
+  console. A hardware watchdog boots it again within about a second, and the
+  restart cause still reads correctly. A power-on start is not affected.
+
+## Security
+
+The gateway is meant for a closed machine network. Before installing one:
+
+- Change the access point password from the default `vtron123`.
+- Set an admin password. Without one, anyone who reaches the page can change
+  the blocklist.
+
+What it does not protect: the web page and API use plain HTTP, so passwords
+and settings cross the network unencrypted, and the Wi-Fi and access point
+passwords are stored unencrypted in the board's flash. Anyone with physical
+access can read them over USB, or hold BOOT for 5 s to reset everything.
 
 ## Tests
 
@@ -181,7 +226,7 @@ python-can supports via `--interface`):
 
 ```sh
 pip install -r tools/requirements.txt
-python tools/can_test.py --channel PCAN_USBBUS1 --rx-channel PCAN_USBBUS2 --host cangw.local all
+python tools/can_test.py --channel PCAN_USBBUS1 --rx-channel PCAN_USBBUS2 --host 192.168.1.50 all   # gateway IP or cangw.local
 python tools/can_test.py --channel PCAN_USBBUS1 --port COM12 sweep burst     # one adapter
 ```
 

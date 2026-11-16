@@ -10,9 +10,12 @@ README). Everything shown here can also be done from the
 
 1. **First time, no Wi-Fi configured:** join the access point
    `CAN-Filter-XXXX` (password `vtron123`) and browse to <http://192.168.4.1>.
-2. **On your network:** browse to <http://cangw.local>, or to the IP address
-   the gateway got from your router (type `status` on the serial console to
-   see it).
+2. **On your network:** browse to the IP address the gateway got from your
+   router. The router's device list shows it under the name `cangw`, and
+   `status` on the serial console prints it. <http://cangw.local> also works
+   from Windows, macOS, iOS and most Linux PCs on the same network, but
+   usually not from Android phones or through routers that filter multicast;
+   see [Finding the gateway](../README.md#finding-the-gateway).
 
 The pill next to the **CANGW** logo shows the live connection: **live** while
 the page is receiving updates, **offline** if the gateway is unreachable. The
@@ -136,14 +139,24 @@ Click **Apply** to use the new values. They are saved at once.
 
 ### Wi-Fi
 
-The line at the top shows the network the gateway is on, its address and the
-signal strength. Enter a network name and password and click
-**Save and reboot**. Leave the name empty to clear the credentials and go back
-to access point mode.
+The line at the top shows one of:
 
-If the network is unreachable for 20 s, the gateway also opens its
-`CAN-Filter-XXXX` access point (address 192.168.4.1) until it reconnects, so you
-can always get back in.
+- **Connected to "network" at address (signal):** normal operation. Note the
+  address; it is the one to bookmark.
+- **Cannot reach "network" (still retrying):** the saved network is out of
+  range, the password is wrong, or the router is down. You are reading this
+  through the access point.
+- **No network configured:** only the access point is running.
+
+Enter a network name and password and click **Save and reboot**. Leave the
+name empty to clear the credentials and go back to access point mode. After
+the reboot the gateway joins the network and its access point closes, so
+move your PC or phone to that network too.
+
+The gateway never gives up on the saved network: it retries every 5 s at
+first, slowing to once a minute. If the network is unreachable for 20 s, it
+also opens its `CAN-Filter-XXXX` access point (address 192.168.4.1) until it
+reconnects, so you can always get back in.
 
 ### Access point password
 
@@ -154,11 +167,13 @@ factory reset restores `vtron123`.
 
 ### Admin password
 
-Set one if anyone else can reach the gateway's network, and always on an
-installed unit: anyone who joins the access point can otherwise change the
-settings. With a password set,
-visitors see the page read-only until they log in. Leave the field empty and
-click **Set password** to remove it.
+Set one on every installed unit: without it, anyone who reaches the page,
+on your network or through the access point, can change the settings. With a
+password set, visitors see the page read-only until they log in. Leave the
+field empty and click **Set password** to remove it.
+
+After a wrong password, the login is locked for 1 s per failed attempt in a
+row, up to 30 s.
 
 ### Configuration
 
@@ -170,7 +185,10 @@ click **Set password** to remove it.
 ### Firmware update
 
 The line under the heading shows the running version, the flash partition,
-the cause of the last restart and free memory. Choose a `firmware.bin` (from
+the cause of the last restart (power on, software restart, brownout, task
+watchdog, crash, ...) and free memory with its lowest point since start-up.
+Anything other than *power on* or *software restart* on an installed unit is
+worth investigating. Choose a `firmware.bin` (from
 `.pio/build/esp32s3/` after `pio run`) and click **Upload**. Settings are
 kept. If the new firmware fails to start CAN and the web server, the next
 reset goes back to the previous version.
@@ -180,17 +198,22 @@ Updating writes a lot to flash; do it while the bus is quiet.
 ### Device
 
 - **Reboot:** forwarding resumes about one second after the restart.
-- **Factory reset:** erases bitrates, blocklist, Wi-Fi and password, then
-  reboots. Holding the **BOOT** button for 5 s while the gateway is running
+- **Factory reset:** erases bitrates, blocklist, Wi-Fi and the admin
+  password, sets the access point password back to `vtron123`, then
+  reboots. DBC files are kept. Holding the **BOOT** button for 5 s while the gateway is running
   does the same, which helps if you are locked out.
 
 ## Troubleshooting
 
 | Symptom | Check |
 |---|---|
-| Page shows **offline** | Is the gateway powered and on the same network? Try its IP address instead of `cangw.local`; some systems do not resolve mDNS names. |
+| `cangw.local` does not open | Use the IP address instead (router device list, or `status` on the serial console). Android and many routers do not handle `.local` names. Type `http://cangw.local` in full; without `http://` the browser may search for it. |
+| Page shows **offline** | Is the gateway powered and your device on the same network? If the gateway rebooted after a Wi-Fi change, it has left the access point and joined your network. |
+| Cannot find the gateway at all | Wait 20 s and look for the `CAN-Filter-XXXX` access point (password `vtron123` unless changed); it opens whenever the saved network is unreachable. |
+| Forgot the access point password | Type `appass <new>` on the serial console, or hold BOOT for 5 s (factory reset). |
+| Gateway restarted by itself | Check the last restart cause under **Settings → Firmware update** or with `status`. *Brownout* points to the power supply. |
 | CAN1 table stays empty | Bitrate matches the bus? 120 Ω termination at both ends of the bus? With listen-only on, is another node acknowledging? |
 | **TX failed** rising on CAN2 | Nothing on CAN2 acknowledges: check wiring, termination, bitrate, and that at least one other node is powered. |
-| **Dropped** rising | CAN2 is slower than CAN1 or its bus is faulty. Raise the CAN2 bitrate or block IDs you do not need. |
+| **Dropped** rising | CAN2 is slower than CAN1 or its bus is faulty. Raise the CAN2 bitrate or block IDs you do not need. `status` on the serial console shows how full the queues have been. |
 | CAN2 bitrate is off | Set **CAN2 controller crystal** to the value fitted on the board. |
 | Forgot the admin password | Hold BOOT for 5 s (factory reset), or type `password off` on the serial console. |
